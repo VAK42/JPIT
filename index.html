@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cache Guide</title>
+<style>
+:root {
+--primary: #3498db;
+--secondary: #2c3e50;
+--accent: #e74c3c;
+--success: #27ae60;
+--bg: #f5f7fa;
+--text: #2c3e50;
+--radius: 6px;
+}
+* {
+margin: 0;
+padding: 0;
+box-sizing: border-box;
+}
+body {
+font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+background: var(--bg);
+color: var(--text);
+line-height: 1.6;
+}
+.langSwitch {
+position: absolute;
+top: 20px;
+right: 40px;
+display: flex;
+background: rgba(255,255,255,0.1);
+border: 1px solid rgba(255,255,255,0.3);
+border-radius: var(--radius);
+padding: 4px;
+z-index: 200;
+}
+.langBtn {
+background: transparent;
+border: none;
+color: rgba(255,255,255,0.6);
+padding: 5px 15px;
+cursor: pointer;
+font-weight: 600;
+border-radius: 4px;
+transition: all 0.3s;
+}
+.langBtn.active {
+background: white;
+color: var(--secondary);
+box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+.container {
+max-width: 1400px;
+margin: 0 auto;
+background: white;
+min-height: 100vh;
+box-shadow: 0 0 40px rgba(0,0,0,0.05);
+}
+.header {
+background: var(--secondary);
+color: white;
+padding: 60px 40px;
+border-bottom: 4px solid var(--primary);
+position: relative;
+}
+.header h1 {
+font-size: 2.8em;
+margin-bottom: 15px;
+font-weight: 700;
+}
+.tabs {
+display: flex;
+background: white;
+border-bottom: 1px solid #e1e8ed;
+position: sticky;
+top: 0;
+z-index: 100;
+flex-wrap: wrap;
+}
+.tab {
+flex: 1;
+min-width: 140px;
+padding: 20px;
+text-align: center;
+cursor: pointer;
+background: white;
+border: none;
+font-size: 15px;
+font-weight: 600;
+transition: all 0.3s ease;
+color: #5a6c7d;
+border-bottom: 3px solid transparent;
+}
+.tab:hover {
+background: #f8f9fa;
+color: var(--secondary);
+}
+.tab.active {
+color: var(--primary);
+border-bottom: 3px solid var(--primary);
+}
+.content {
+padding: 50px 60px;
+display: none;
+max-width: 1100px;
+margin: 0 auto;
+}
+.content.active {
+display: block;
+animation: fadeIn 0.4s ease;
+}
+@keyframes fadeIn {
+from { opacity: 0; transform: translateY(10px); }
+to { opacity: 1; transform: translateY(0); }
+}
+.section h2 {
+color: var(--secondary);
+margin-bottom: 30px;
+border-left: 5px solid var(--primary);
+padding-left: 20px;
+}
+.card {
+background: #f8f9fa;
+border: 1px solid #e1e8ed;
+padding: 30px;
+margin: 25px 0;
+border-radius: var(--radius);
+}
+.card h3 {
+margin-bottom: 15px;
+color: var(--secondary);
+}
+.btnMinimal {
+background: transparent;
+border: 2px solid var(--primary);
+color: var(--primary);
+padding: 10px 24px;
+border-radius: var(--radius);
+font-weight: 600;
+cursor: pointer;
+transition: all 0.2s;
+display: inline-block;
+margin: 5px;
+}
+.btnMinimal:hover {
+background: var(--primary);
+color: white;
+transform: translateY(-2px);
+}
+.btnMinimal:active {
+transform: translateY(0);
+}
+.redisDemo {
+background: var(--secondary);
+border-radius: var(--radius);
+padding: 40px;
+margin: 30px 0;
+color: white;
+}
+.redisContainer {
+display: flex;
+justify-content: space-around;
+align-items: center;
+margin: 40px 0;
+flex-wrap: wrap;
+gap: 20px;
+}
+.nodeBox {
+text-align: center;
+padding: 25px;
+background: transparent;
+border-radius: var(--radius);
+min-width: 160px;
+border-width: 2px;
+border-style: solid;
+transition: all 0.3s;
+}
+.client {
+border-color: var(--primary);
+color: var(--primary);
+box-shadow: 0 0 15px rgba(52, 152, 219, 0.1);
+}
+.redisServer {
+border-color: var(--accent);
+color: var(--accent);
+box-shadow: 0 0 15px rgba(231, 76, 60, 0.1);
+}
+.database {
+border-color: var(--success);
+color: var(--success);
+box-shadow: 0 0 15px rgba(39, 174, 96, 0.1);
+}
+.nodeBox h4 {
+margin-bottom: 10px;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 1px;
+}
+.arrow {
+color: rgba(255,255,255,0.3);
+font-size: 24px;
+}
+.dataFlow {
+background: rgba(0,0,0,0.2);
+padding: 15px;
+border-radius: var(--radius);
+min-height: 70px;
+display: flex;
+align-items: center;
+justify-content: center;
+border: 1px solid rgba(255,255,255,0.1);
+margin-bottom: 20px;
+}
+.dataPacket {
+background: transparent;
+border: 2px solid #f39c12;
+color: #f39c12;
+padding: 8px 20px;
+border-radius: var(--radius);
+font-weight: 600;
+font-size: 0.9em;
+opacity: 0;
+}
+.animateFlow {
+animation: flowMove 2s infinite;
+}
+@keyframes flowMove {
+0% { transform: translateX(-100px); opacity: 0; }
+20% { opacity: 1; }
+80% { opacity: 1; }
+100% { transform: translateX(100px); opacity: 0; }
+}
+.logConsole {
+background: #1a1a1a;
+padding: 20px;
+border-radius: var(--radius);
+font-family: monospace;
+font-size: 13px;
+border: 1px solid #444;
+min-height: 150px;
+max-height: 150px;
+overflow-y: auto;
+}
+.logEntry { margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 2px;}
+.options li {
+background: white;
+padding: 15px 20px;
+margin: 10px 0;
+border: 2px solid #e1e8ed;
+border-radius: var(--radius);
+cursor: pointer;
+transition: all 0.2s;
+}
+.options li:hover {
+border-color: var(--primary);
+background: #f0f7fb;
+}
+.options li.correct {
+border-color: var(--success);
+background: #eafaf1;
+color: var(--success);
+font-weight: bold;
+}
+.options li.wrong {
+border-color: var(--accent);
+background: #fdedec;
+color: var(--accent);
+}
+.strategyGrid {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+gap: 20px;
+margin-top: 20px;
+}
+.strategyCard {
+background: white;
+border: 1px solid #e1e8ed;
+padding: 25px;
+border-radius: var(--radius);
+border-top: 4px solid var(--secondary);
+}
+.vnTitleCase {
+text-transform: capitalize;
+}
+.prosCons {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 20px;
+}
+.pros, .cons {
+background: white;
+padding: 25px;
+border-radius: var(--radius);
+border: 1px solid #eee;
+}
+.pros { border-top: 4px solid var(--success); }
+.cons { border-top: 4px solid var(--accent); }
+@media (max-width: 768px) {
+.header { padding: 40px 20px; }
+.content { padding: 30px 20px; }
+.prosCons { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<div class="langSwitch">
+<button class="langBtn active" onclick="setLang('ja')">JP</button>
+<button class="langBtn" onclick="setLang('vn')">VN</button>
+</div>
+<h1 id="tMainTitle">キャッシュ完全ガイド</h1>
+<p id="tSubTitle">なぜキャッシュは必要だが、危険でもあるのか？</p>
+</div>
+<div class="tabs">
+<button class="tab active" onclick="showTab('definition')" id="tabDef">定義</button>
+<button class="tab" onclick="showTab('proscons')" id="tabPros">メリット・デメリット</button>
+<button class="tab" onclick="showTab('strategies')" id="tabStrat">戦略と種類</button>
+<button class="tab" onclick="showTab('redis')" id="tabDemo">Redisデモ</button>
+<button class="tab" onclick="showTab('bestpractices')" id="tabBest">ベストプラクティス</button>
+<button class="tab" onclick="showTab('quiz')" id="tabQuiz">クイズ</button>
+</div>
+<div id="definition" class="content active">
+<div class="section">
+<h2 id="tDefTitle">キャッシュとは何か？</h2>
+<div class="card">
+<h3 id="tWhatIs">定義</h3>
+<p id="tDefDesc">キャッシュは、よく使うデータを、少しの間、保存する仕組みです。目的は、表示を速くすることです。</p>
+</div>
+<div class="card">
+<h3 id="tPurposeTitle">目的</h3>
+<ul style="line-height: 2; margin-left: 20px;">
+<li id="tP1">データアクセスを高速化</li>
+<li id="tP2">サーバー負荷を軽減</li>
+<li id="tP3">コストを削減</li>
+<li id="tP4">ユーザー体験を向上</li>
+</ul>
+</div>
+<div class="card" style="background: #fff9e6; border-color: #f39c12;">
+<h3 style="color: #d35400;" id="tExTitle">実生活の例</h3>
+<p><strong id="tFbEx">Facebookアプリの例：</strong></p>
+<p id="tFbDesc">最初に開くときは、少し時間がかかります。次に開くと、すぐに画面が出ます。</p>
+<br>
+<p><strong id="tWaterEx">水のボトルの例：</strong></p>
+<p id="tWaterDesc">水のボトルを箱で買うと、毎日コンビニに行かなくていいです。</p>
+</div>
+</div>
+</div>
+<div id="proscons" class="content">
+<div class="section">
+<h2 id="tPcTitle">メリットとデメリット</h2>
+<div class="prosCons">
+<div class="pros">
+<h3 style="color: var(--success);" id="tProsH">メリット（なぜ必要？）</h3>
+<h4 id="tPro1H">1. 時間を節約</h4>
+<p id="tPro1D">データベースへのアクセス時間を大幅に削減します。</p>
+<br>
+<h4 id="tPro2H">2. コストを削減</h4>
+<p id="tPro2D">サーバーのリソース（CPU/メモリ）の使用量を減らせます。</p>
+</div>
+<div class="cons">
+<h3 style="color: var(--accent);" id="tConsH">デメリット（なぜ危険？）</h3>
+<h4 id="tCon1H">1. 古い情報を出す</h4>
+<p id="tCon1D">更新されたのに、キャッシュに残った古いデータが表示されるリスクがあります。</p>
+<br>
+<h4 id="tCon2H">2. 複雑さの増加</h4>
+<p id="tCon2D">いつキャッシュを消すか（無効化）の管理が難しいです。</p>
+</div>
+</div>
+</div>
+</div>
+<div id="strategies" class="content">
+<div class="section">
+<h2 id="tStratTitle">キャッシュ戦略と種類</h2>
+<h3 id="tStratTypes">キャッシュの種類</h3>
+<div class="strategyGrid">
+<div class="strategyCard">
+<h4 style="color: var(--primary);">Browser Cache</h4>
+<p id="tBrowserCache">画像やCSSをユーザーのブラウザに保存します。</p>
+</div>
+<div class="strategyCard">
+<h4 style="color: var(--primary);">CDN (Content Delivery Network)</h4>
+<p id="tCdnCache">世界中のサーバーにコンテンツを配置し、ユーザーに近い場所から配信します。</p>
+</div>
+<div class="strategyCard">
+<h4 style="color: var(--primary);">Database Cache</h4>
+<p id="tDbCache">頻繁に実行されるクエリの結果を保存します。</p>
+</div>
+</div>
+<h3 id="tPatterns" style="margin-top: 40px;">デザインパターン</h3>
+<div class="card">
+<h4 id="tCacheAside">1. Cache-Aside (Lazy Loading)</h4>
+<p id="tCaDesc">アプリはまずキャッシュを確認します。なければDBから取得し、キャッシュに保存します。最も一般的です。</p>
+<hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+<h4 id="tWriteThrough">2. Write-Through</h4>
+<p id="tWtDesc">DBとキャッシュを同時に更新します。データの一貫性が高いですが、書き込みが遅くなります。</p>
+</div>
+<h3 id="tEviction">削除ポリシー (Eviction)</h3>
+<div class="card">
+<p><strong style="color: var(--accent);">LRU (Least Recently Used):</strong> <span id="tLru">最も長く使われていないデータから削除します。</span></p>
+</div>
+</div>
+</div>
+<div id="redis" class="content">
+<div class="section">
+<h2 id="tDemoTitle">Redisアニメーションデモ</h2>
+<div class="redisDemo">
+<h3 style="text-align: center; margin-bottom: 30px;" id="tFlowTitle">動作フロー</h3>
+<div class="card" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; margin-bottom:30px;">
+<h4 id="tGuideTitle" style="color:white; margin-bottom:10px;">デモの使い方</h4>
+<p id="tGuideDesc">「Hit」「Miss」「Update」のボタンをクリックして、データの流れを確認してください。</p>
+</div>
+<div class="redisContainer">
+<div class="nodeBox client">
+<h4 id="tClient">Client</h4>
+<p>App / Browser</p>
+</div>
+<div class="arrow">&rarr;</div>
+<div class="nodeBox redisServer">
+<h4 id="tRedis">Redis</h4>
+<p>Cache Layer</p>
+</div>
+<div class="arrow">&rarr;</div>
+<div class="nodeBox database">
+<h4 id="tDb">Database</h4>
+<p>MySQL / PSQL</p>
+</div>
+</div>
+<div class="dataFlow">
+<div class="dataPacket" id="dataPacket">DATA</div>
+</div>
+<div style="text-align: center; margin-bottom: 20px;">
+<button class="btnMinimal" onclick="simulateCache('hit')" id="btnHit">Hit (高速)</button>
+<button class="btnMinimal" onclick="simulateCache('miss')" id="btnMiss">Miss (低速)</button>
+<button class="btnMinimal" onclick="simulateCache('update')" id="btnUpdate">Update (更新)</button>
+</div>
+<div class="logConsole" id="cacheLog">
+<div class="logEntry" style="color: #00ff00;">> System Ready...</div>
+</div>
+</div>
+</div>
+</div>
+<div id="bestpractices" class="content">
+<div class="section">
+<h2 id="tBestTitle">ベストプラクティス</h2>
+<div class="card">
+<h3 id="tTtlH">1. TTL（有効期限）を設定する</h3>
+<p id="tTtlDesc">データを永遠に残さないでください。必ず有効期限（Time To Live）を設定します。</p>
+</div>
+<div class="card">
+<h3 id="tInvalidH">2. 更新時の無効化</h3>
+<p id="tInvalidDesc">元のデータが変更されたら、必ずキャッシュを削除または更新してください。</p>
+</div>
+<div class="card">
+<h3 id="tWhatToH">3. 何をキャッシュするか？</h3>
+<div class="prosCons">
+<div style="border-left: 4px solid var(--success); padding-left: 15px;">
+<h4 style="color: var(--success);" id="tGoodH">OK</h4>
+<ul style="margin-left: 20px;">
+<li id="tOk1">ニュース記事</li>
+<li id="tOk2">商品リスト</li>
+<li id="tOk3">設定データ</li>
+</ul>
+</div>
+<div style="border-left: 4px solid var(--accent); padding-left: 15px;">
+<h4 style="color: var(--accent);" id="tBadH">NG</h4>
+<ul style="margin-left: 20px;">
+<li id="tNg1">リアルタイム在庫</li>
+<li id="tNg2">決済情報</li>
+<li id="tNg3">認証トークン（注意が必要）</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="quiz" class="content">
+<div class="quizContainer" style="max-width: 800px; margin: 0 auto;">
+<h2 style="text-align: center; margin-bottom: 30px;" id="tQuizTitle">理解度チェック</h2>
+<div id="quizArea">
+</div>
+<button class="btnMinimal" style="background: var(--secondary); color: white; border: none; width: 100%; margin-top: 20px;" onclick="checkScore()" id="btnCheck">採点する</button>
+<div id="scoreResult" style="text-align: center; margin-top: 20px; font-weight: bold; font-size: 1.2em;"></div>
+</div>
+</div>
+</div>
+<script>
+const content = {
+ja: {
+mainTitle: "キャッシュ完全ガイド",
+subTitle: "なぜキャッシュは必要だが、危険でもあるのか？",
+tabs: ["定義", "メリット・デメリット", "戦略と種類", "Redisデモ", "ベストプラクティス", "クイズ"],
+defTitle: "キャッシュとは何か？",
+whatIs: "定義",
+defDesc: "キャッシュは、よく使うデータを、少しの間、保存する仕組みです。目的は、表示を速くすることです。",
+purposeTitle: "目的",
+p1: "データアクセスを高速化",
+p2: "サーバー負荷を軽減",
+p3: "コストを削減",
+p4: "ユーザー体験を向上",
+exTitle: "実生活の例",
+fbEx: "Facebookアプリの例：",
+fbDesc: "最初に開くときは時間がかかりますが、2回目は一瞬で開きます。",
+waterEx: "水のボトルの例：",
+waterDesc: "毎回コンビニに行く代わりに、手元にボトルを置いておくことで時間を節約します。",
+pcTitle: "メリットとデメリット",
+prosH: "メリット",
+pro1H: "1. 時間を節約",
+pro1D: "データベースやAPIへのアクセス時間を大幅に削減します。",
+pro2H: "2. コストを削減",
+pro2D: "サーバーのリソース使用量を減らします。",
+consH: "デメリット",
+con1H: "1. 古いデータ",
+con1D: "更新されたのに、古い情報が表示されるリスクがあります。",
+con2H: "2. 複雑さ",
+con2D: "バグの原因になりやすく、デバッグが難しいです。",
+stratTitle: "キャッシュ戦略と種類",
+stratTypes: "キャッシュの種類",
+browserCache: "ブラウザに画像などを保存します。",
+cdnCache: "ユーザーに近いサーバーから配信します。",
+dbCache: "クエリ結果を保存します。",
+patterns: "デザインパターン",
+cacheAside: "1. Cache-Aside (Lazy Loading)",
+caDesc: "必要になった時にだけキャッシュを作ります。最も一般的です。",
+writeThrough: "2. Write-Through",
+wtDesc: "データベースとキャッシュを同時に書き込みます。",
+eviction: "削除ポリシー",
+lru: "最も長く使われていないものから削除します。",
+demoTitle: "Redisアニメーション",
+flowTitle: "動作フロー",
+client: "クライアント",
+redis: "Redis",
+db: "データベース",
+btns: { hit: "Hit (高速)", miss: "Miss (低速)", update: "Update (更新)" },
+guideTitle: "デモの使い方",
+guideDesc: "「Hit」「Miss」「Update」のボタンをクリックして、データの流れを確認してください。",
+bestTitle: "ベストプラクティス",
+ttlH: "1. TTL（有効期限）",
+ttlDesc: "データには必ず有効期限を設定しましょう。",
+invalidH: "2. キャッシュの削除",
+invalidDesc: "データが変わったら、キャッシュを消す必要があります。",
+whatToH: "3. データの選別",
+goodH: "推奨",
+ok1: "静的コンテンツ",
+ok2: "商品カタログ",
+ok3: "マスタデータ",
+badH: "非推奨",
+ng1: "リアルタイム在庫",
+ng2: "銀行残高",
+ng3: "頻繁に変わるデータ",
+quizTitle: "理解度クイズ",
+btnCheck: "採点する",
+questions: [
+{ q: "キャッシュの主な目的は？", options: ["永久保存", "高速化", "暗号化"], a: 1 },
+{ q: "キャッシュのデメリットは？", options: ["古いデータの表示", "コスト増加", "速度低下"], a: 0 },
+{ q: "TTLとは？", options: ["データベース名", "通信プロトコル", "有効期限"], a: 2 },
+{ q: "ブラウザキャッシュはどこに保存されますか？", options: ["サーバー", "ユーザー端末", "データベース"], a: 1 },
+{ q: "CDNの主な目的は？", options: ["DBバックアップ", "地理的高速化", "コードコンパイル"], a: 1 },
+{ q: "キャッシュミスとは？", options: ["データあり", "データなし", "エラー"], a: 1 },
+{ q: "LRUは何の略？", options: ["Last Recently Used", "Least Recently Used", "Low Resource Usage"], a: 1 },
+{ q: "Cache-Asideの最初のステップは？", options: ["キャッシュ確認", "DB問い合わせ", "DB書き込み"], a: 0 },
+{ q: "Write-Throughの欠点は？", options: ["読み込み遅延", "書き込み遅延", "不整合"], a: 1 },
+{ q: "キャッシュの無効化（Invalidation）とは？", options: ["データ削除", "暗号化", "並べ替え"], a: 0 },
+{ q: "キャッシュに適さないデータは？", options: ["静的画像", "株価", "商品説明"], a: 1 },
+{ q: "Redisはどのようなストアですか？", options: ["メモリ内", "テープ", "光学"], a: 0 },
+{ q: "キャッシュウォーミングとは？", options: ["データ事前ロード", "過熱", "全削除"], a: 0 }
+]
+},
+vn: {
+mainTitle: "Hướng Dẫn Toàn Diện Về Cache",
+subTitle: "Tại Sao Cache Cần Thiết Nhưng Cũng Nguy Hiểm?",
+tabs: ["Định Nghĩa", "Ưu / Nhược Điểm", "Chiến Lược", "Redis Demo", "Thực Hành Tốt Nhất", "Câu Hỏi"],
+defTitle: "Cache Là Gì?",
+whatIs: "Định Nghĩa",
+defDesc: "Cache Là Cơ Chế Lưu Trữ Dữ Liệu Tạm Thời Để Truy Xuất Nhanh Hơn Trong Tương Lai.",
+purposeTitle: "Mục Đích",
+p1: "Tăng Tốc Độ Truy Cập Dữ Liệu",
+p2: "Giảm Tải Cho Máy Chủ",
+p3: "Tiết Kiệm Chi Phí",
+p4: "Cải Thiện Trải Nghiệm Người Dùng",
+exTitle: "Ví Dụ Thực Tế",
+fbEx: "Ví Dụ Ứng Dụng Facebook:",
+fbDesc: "Lần Đầu Mở Sẽ Lâu, Nhưng Lần Sau Sẽ Nhanh Vì Dữ Liệu Đã Được Cache.",
+waterEx: "Ví Dụ Chai Nước:",
+waterDesc: "Mua Thùng Nước Để Tại Chỗ Sẽ Tiết Kiệm Thời Gian Đi Ra Cửa Hàng Tiện Lợi.",
+pcTitle: "Ưu Điểm Và Nhược Điểm",
+prosH: "Ưu Điểm",
+pro1H: "1. Tiết Kiệm Thời Gian",
+pro1D: "Giảm Đáng Kể Thời Gian Chờ Đợi Phản Hồi Từ Database.",
+pro2H: "2. Giảm Chi Phí",
+pro2D: "Giảm Bớt Nhu Cầu Về Tài Nguyên Phần Cứng Server.",
+consH: "Nhược Điểm",
+con1H: "1. Dữ Liệu Cũ",
+con1D: "Người Dùng Có Thể Nhìn Thấy Thông Tin Cũ Dù Dữ Liệu Gốc Đã Thay Đổi.",
+con2H: "2. Phức Tạp",
+con2D: "Khó Quản Lý Việc Khi Nào Cần Xóa Hoặc Cập Nhật Cache.",
+stratTitle: "Các Loại Và Chiến Lược Cache",
+stratTypes: "Các Loại Cache",
+browserCache: "Lưu Hình Ảnh Và File Tĩnh Trên Trình Duyệt.",
+cdnCache: "Phân Phối Nội Dung Từ Server Gần Người Dùng Nhất.",
+dbCache: "Lưu Kết Quả Của Các Câu Truy Vấn Database.",
+patterns: "Mô Hình Thiết Kế",
+cacheAside: "1. Cache-Aside (Lazy Loading)",
+caDesc: "Chỉ Tải Dữ Liệu Vào Cache Khi Cần Thiết. Đây Là Cách Phổ Biến Nhất.",
+writeThrough: "2. Write-Through",
+wtDesc: "Cập Nhật Database Và Cache Cùng Một Lúc.",
+eviction: "Chính Sách Xóa (Eviction)",
+lru: "Xóa Dữ Liệu Ít Được Sử Dụng Nhất Gần Đây.",
+demoTitle: "Mô Phỏng Redis",
+flowTitle: "Luồng Dữ Liệu",
+client: "Client (Ứng Dụng)",
+redis: "Redis (Bộ Nhớ Đệm)",
+db: "Database (Cơ Sở Dữ Liệu)",
+btns: { hit: "Hit (Nhanh)", miss: "Miss (Chậm)", update: "Update (Cập Nhật)" },
+guideTitle: "Hướng Dẫn Demo",
+guideDesc: "Nhấn Các Nút 'Hit', 'Miss', Hoặc 'Update' Để Xem Luồng Dữ Liệu Chạy.",
+bestTitle: "Thực Hành Tốt Nhất",
+ttlH: "1. Thiết Lập TTL (Thời Gian Sống)",
+ttlDesc: "Luôn Đặt Thời Gian Hết Hạn Cho Dữ Liệu Cache.",
+invalidH: "2. Vô Hiệu Hóa Cache",
+invalidDesc: "Khi Dữ Liệu Gốc Thay Đổi, Hãy Xóa Cache Ngay Lập Tức.",
+whatToH: "3. Chọn Lọc Dữ Liệu",
+goodH: "Nên Cache",
+ok1: "Nội Dung Tĩnh",
+ok2: "Danh Sách Sản Phẩm",
+ok3: "Dữ Liệu Cấu Hình",
+badH: "Không Nên Cache",
+ng1: "Tồn Kho Thời Gian Thực",
+ng2: "Số Dư Tài Khoản",
+ng3: "Dữ Liệu Thay Đổi Liên Tục",
+quizTitle: "Kiểm Tra Kiến Thức",
+btnCheck: "Xem Kết Quả",
+questions: [
+{ q: "Mục Đích Chính Của Cache Là Gì?", options: ["Lưu Trữ Vĩnh Viễn", "Tăng Tốc Độ", "Mã Hóa"], a: 1 },
+{ q: "Rủi Ro Của Cache Là Gì?", options: ["Hiển Thị Dữ Liệu Cũ", "Tăng Chi Phí", "Giảm Tốc Độ"], a: 0 },
+{ q: "TTL Có Nghĩa Là Gì?", options: ["Tên Database", "Giao Thức Mạng", "Thời Gian Hết Hạn"], a: 2 },
+{ q: "Browser Cache Được Lưu Ở Đâu?", options: ["Server", "Thiết Bị Người Dùng", "Database"], a: 1 },
+{ q: "Mục Đích Chính Của CDN Là Gì?", options: ["Backup Database", "Tăng Tốc Độ Theo Địa Lý", "Biên Dịch Code"], a: 1 },
+{ q: "Cache Miss Nghĩa Là Gì?", options: ["Tìm Thấy Dữ Liệu", "Không Tìm Thấy Dữ Liệu", "Lỗi Hệ Thống"], a: 1 },
+{ q: "LRU Là Viết Tắt Của Gì?", options: ["Last Recently Used", "Least Recently Used", "Low Resource Usage"], a: 1 },
+{ q: "Bước Đầu Tiên Của Cache-Aside Là Gì?", options: ["Kiểm Tra Cache", "Truy Vấn DB", "Ghi Vào DB"], a: 0 },
+{ q: "Nhược Điểm Của Write-Through Là Gì?", options: ["Đọc Chậm", "Ghi Chậm", "Không Nhất Quán"], a: 1 },
+{ q: "Cache Invalidation Nghĩa Là Gì?", options: ["Xóa Dữ Liệu", "Mã Hóa", "Sắp Xếp"], a: 0 },
+{ q: "Dữ Liệu Nào Không Nên Cache?", options: ["Ảnh Tĩnh", "Giá Cổ Phiếu", "Mô Tả Sản Phẩm"], a: 1 },
+{ q: "Redis Là Loại Lưu Trữ Gì?", options: ["Trong Bộ Nhớ (In-Memory)", "Băng Từ", "Quang Học"], a: 0 },
+{ q: "Cache Warming Là Gì?", options: ["Tải Trước Dữ Liệu", "Máy Chủ Quá Nóng", "Xóa Toàn Bộ"], a: 0 }
+]
+}
+};
+let currentLang = 'ja';
+function setLang(lang) {
+currentLang = lang;
+const data = content[lang];
+document.querySelectorAll('.langBtn').forEach(b => b.classList.remove('active'));
+event.target.closest('button').classList.add('active');
+document.getElementById('tMainTitle').textContent = data.mainTitle;
+document.getElementById('tSubTitle').textContent = data.subTitle;
+const tabs = document.querySelectorAll('.tab');
+tabs[0].textContent = data.tabs[0];
+tabs[1].textContent = data.tabs[1];
+tabs[2].textContent = data.tabs[2];
+tabs[3].textContent = data.tabs[3];
+tabs[4].textContent = data.tabs[4];
+tabs[5].textContent = data.tabs[5];
+document.getElementById('tDefTitle').textContent = data.defTitle;
+document.getElementById('tWhatIs').textContent = data.whatIs;
+document.getElementById('tDefDesc').textContent = data.defDesc;
+document.getElementById('tPurposeTitle').textContent = data.purposeTitle;
+document.getElementById('tP1').textContent = data.p1;
+document.getElementById('tP2').textContent = data.p2;
+document.getElementById('tP3').textContent = data.p3;
+document.getElementById('tP4').textContent = data.p4;
+document.getElementById('tExTitle').textContent = data.exTitle;
+document.getElementById('tFbEx').textContent = data.fbEx;
+document.getElementById('tFbDesc').textContent = data.fbDesc;
+document.getElementById('tWaterEx').textContent = data.waterEx;
+document.getElementById('tWaterDesc').textContent = data.waterDesc;
+document.getElementById('tPcTitle').textContent = data.pcTitle;
+document.getElementById('tProsH').textContent = data.prosH;
+document.getElementById('tPro1H').textContent = data.pro1H;
+document.getElementById('tPro1D').textContent = data.pro1D;
+document.getElementById('tPro2H').textContent = data.pro2H;
+document.getElementById('tPro2D').textContent = data.pro2D;
+document.getElementById('tConsH').textContent = data.consH;
+document.getElementById('tCon1H').textContent = data.con1H;
+document.getElementById('tCon1D').textContent = data.con1D;
+document.getElementById('tCon2H').textContent = data.con2H;
+document.getElementById('tCon2D').textContent = data.con2D;
+document.getElementById('tStratTitle').textContent = data.stratTitle;
+document.getElementById('tStratTypes').textContent = data.stratTypes;
+document.getElementById('tBrowserCache').textContent = data.browserCache;
+document.getElementById('tCdnCache').textContent = data.cdnCache;
+document.getElementById('tDbCache').textContent = data.dbCache;
+document.getElementById('tPatterns').textContent = data.patterns;
+document.getElementById('tCacheAside').textContent = data.cacheAside;
+document.getElementById('tCaDesc').textContent = data.caDesc;
+document.getElementById('tWriteThrough').textContent = data.writeThrough;
+document.getElementById('tWtDesc').textContent = data.wtDesc;
+document.getElementById('tEviction').textContent = data.eviction;
+document.getElementById('tLru').textContent = data.lru;
+document.getElementById('tDemoTitle').textContent = data.demoTitle;
+document.getElementById('tFlowTitle').textContent = data.flowTitle;
+document.getElementById('tClient').textContent = data.client;
+document.getElementById('tRedis').textContent = data.redis;
+document.getElementById('tDb').textContent = data.db;
+document.getElementById('btnHit').textContent = data.btns.hit;
+document.getElementById('btnMiss').textContent = data.btns.miss;
+document.getElementById('btnUpdate').textContent = data.btns.update;
+document.getElementById('tGuideTitle').textContent = data.guideTitle;
+document.getElementById('tGuideDesc').textContent = data.guideDesc;
+document.getElementById('tBestTitle').textContent = data.bestTitle;
+document.getElementById('tTtlH').textContent = data.ttlH;
+document.getElementById('tTtlDesc').textContent = data.ttlDesc;
+document.getElementById('tInvalidH').textContent = data.invalidH;
+document.getElementById('tInvalidDesc').textContent = data.invalidDesc;
+document.getElementById('tWhatToH').textContent = data.whatToH;
+document.getElementById('tGoodH').textContent = data.goodH;
+document.getElementById('tOk1').textContent = data.ok1;
+document.getElementById('tOk2').textContent = data.ok2;
+document.getElementById('tOk3').textContent = data.ok3;
+document.getElementById('tBadH').textContent = data.badH;
+document.getElementById('tNg1').textContent = data.ng1;
+document.getElementById('tNg2').textContent = data.ng2;
+document.getElementById('tNg3').textContent = data.ng3;
+document.getElementById('tQuizTitle').textContent = data.quizTitle;
+document.getElementById('btnCheck').textContent = data.btnCheck;
+renderQuiz();
+}
+function showTab(tabName) {
+document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+document.getElementById(tabName).classList.add('active');
+event.target.classList.add('active');
+}
+function addLog(msg, color) {
+const div = document.createElement('div');
+div.className = 'logEntry';
+div.style.color = color;
+div.textContent = `> ${msg}`;
+const console = document.getElementById('cacheLog');
+console.prepend(div);
+}
+function simulateCache(type) {
+const packet = document.getElementById('dataPacket');
+packet.classList.remove('animateFlow');
+void packet.offsetWidth;
+packet.classList.add('animateFlow');
+const lang = content[currentLang].btns;
+if (type === 'hit') {
+packet.style.borderColor = '#3498db';
+packet.style.color = '#3498db';
+addLog('Request: GET /User/1', '#fff');
+setTimeout(() => addLog('Redis HIT: Data Found (10ms)', '#3498db'), 800);
+} else if (type === 'miss') {
+packet.style.borderColor = '#e74c3c';
+packet.style.color = '#e74c3c';
+addLog('Request: GET /Report/Daily', '#fff');
+setTimeout(() => addLog('Redis MISS: Fetching From DB...', '#e74c3c'), 800);
+setTimeout(() => addLog('DB: Query Complete (500ms)', '#27ae60'), 1500);
+setTimeout(() => addLog('Redis: Saved To Cache', '#3498db'), 2000);
+} else {
+packet.style.borderColor = '#f1c40f';
+packet.style.color = '#f1c40f';
+addLog('Request: POST /User/Update', '#fff');
+setTimeout(() => addLog('DB: Updated Record', '#27ae60'), 1000);
+setTimeout(() => addLog('Redis: Invalidated (Deleted) Cache Key', '#e74c3c'), 1500);
+}
+}
+let userAnswers = {};
+function renderQuiz() {
+const qData = content[currentLang].questions;
+const container = document.getElementById('quizArea');
+container.innerHTML = '';
+userAnswers = {};
+document.getElementById('scoreResult').innerHTML = '';
+qData.forEach((item, index) => {
+const qDiv = document.createElement('div');
+qDiv.className = 'card';
+qDiv.innerHTML = `
+<h3>Q${index + 1}: ${item.q}</h3>
+<ul class="options" id="qOpts${index}">
+${item.options.map((opt, i) =>
+`<li onclick="selectOption(${index}, ${i})">${opt}</li>`
+).join('')}
+</ul>
+`;
+container.appendChild(qDiv);
+});
+}
+function selectOption(qIdx, oIdx) {
+userAnswers[qIdx] = oIdx;
+const opts = document.querySelectorAll(`#qOpts${qIdx} li`);
+opts.forEach((li, i) => {
+li.style.background = i === oIdx ? '#f0f7fb' : 'white';
+li.style.borderColor = i === oIdx ? '#3498db' : '#e1e8ed';
+});
+}
+function checkScore() {
+const qData = content[currentLang].questions;
+let score = 0;
+qData.forEach((item, index) => {
+const opts = document.querySelectorAll(`#qOpts${index} li`);
+opts.forEach(li => li.className = '');
+if (userAnswers[index] === item.a) {
+score++;
+opts[item.a].classList.add('correct');
+} else {
+opts[item.a].classList.add('correct');
+if (userAnswers[index] !== undefined) {
+opts[userAnswers[index]].classList.add('wrong');
+}
+}
+});
+const resultDiv = document.getElementById('scoreResult');
+const total = qData.length;
+resultDiv.style.color = score === total ? '#27ae60' : '#2c3e50';
+resultDiv.textContent = `${currentLang === 'ja' ? '正解数' : 'Kết Quả'}: ${score} / ${total}`;
+}
+renderQuiz();
+</script>
+</body>
+</html>
